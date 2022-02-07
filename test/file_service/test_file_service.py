@@ -86,12 +86,10 @@ def test_read_file(mocker):
     mocked_open().read.return_value = file_content
 
     test_filename = "test_file_name"
-    another_filename = "another_file_name"
-
-    def os_path_isfile_side_effect(filename):
-        if filename == test_filename:
-            return True
-        return False
+    
+    def os_path_isfile_true(filename):
+        assert filename == test_filename
+        return True
     
     mock_isfile = mocker.patch("os.path.isfile")
     mock_isfile.side_effect = os_path_isfile_side_effect
@@ -102,6 +100,12 @@ def test_read_file(mocker):
     mocked_open.assert_called_with(test_filename, "r")
     mocked_open().read.assert_called()
 
+    another_filename = "another_file_name"
+    def os_path_isfile_false(filename):
+        assert filename == another_filename
+        return False
+    mock_isfile.side_effect = os_path_isfile_side_effect
+    
     result = file_service.read_file(another_filename)
 
     assert result == None
@@ -120,37 +124,35 @@ def test_delete_file(mocker):
     
     mock_isfile = mocker.patch("os.path.isfile")
     mock_isfile.side_effect = os_path_isfile_side_effect
-
     mock_remove = mocker.patch("os.remove")
-    
     file_service.delete_file(test_filename)
-
     mock_remove.assert_called_with(test_filename)
-    
     file_service.delete_file(another_filename)
 
     assert mock_remove.call_count == 1
 
 
-def test_change_dir(mocker):
-
+def test_change_dir_succes_flow(mocker):
     test_dir = "test_dir"
-    another_dir = "another_dir"
-
-    def os_path_isdir_side_effect(dirname):
-        if dirname == test_dir:
-            return True
-        return False
-    
-    mock_isfile = mocker.patch("os.path.isdir")
-    mock_isfile.side_effect = os_path_isdir_side_effect
-
+    mock_isdir = mocker.patch("os.path.isdir")
+    mock_isdir.return_value = True
     mock_chdir = mocker.patch("os.chdir")
     
     file_service.change_dir(test_dir)
-
+    
+    mock_isdir.assert_called_with(test_dir)
     mock_chdir.assert_called_with(test_dir)
     
-    file_service.change_dir(another_dir)
-
-    assert mock_chdir.call_count == 1
+    
+def test_change_dir_no_such_directory(mocker):
+    test_dir = "non_existing_dir"
+    mock_isdir = mocker.patch("os.path.isdir")
+    mock_isdir.return_value = False
+    mock_chdir = mocker.patch("os.chdir")
+    
+    file_service.change_dir(test_dir)
+    
+    mock_isdir.assert_called_with(test_dir)
+    mock_chdir.assert_not_called()
+    
+    
