@@ -26,16 +26,8 @@ def test_create_file(mocker):
     mocked_open().write.assert_called_with(my_content)
 
 
-def test_unique_filename(mocker):
-    some_random_string = "some_rand_string"
-    mock_rand_string = mocker.patch("src.utils.random_string")
-    mock_rand_string.return_value = some_random_string
-
-    res = file_service.file_service.unique_filename()
-    assert res == some_random_string
-
-
 def test_create_file_duplicate(mocker):
+
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True)
 
@@ -51,23 +43,21 @@ def test_create_file_duplicate(mocker):
         if path_exists_calls_count == 1:
             assert filename == first_file_name
             return True
-        elif path_exists_calls_count == 2:
-            assert filename == second_file_name
+        assert filename == second_file_name
         return False
 
     mock_exists = mocker.patch("os.path.exists")
     mock_exists.side_effect = os_path_exists_side_effect
 
-    mock_uniq_file_name = mocker.patch("src.file_service.file_service.unique_filename")
+    mock_rand_string = mocker.patch("src.utils.random_string")
     
-    def unique_filename_side_effect():
+    def random_string_side_effect(length):
         
-        if len(mock_uniq_file_name.mock_calls) == 1:
+        if len(mock_rand_string.mock_calls) == 1:
             return first_file_name
-        else:
-            return second_file_name
+        return second_file_name
     
-    mock_uniq_file_name.side_effect = unique_filename_side_effect
+    mock_rand_string.side_effect = random_string_side_effect
     
     my_content = "my content"
     file_service.create_file(my_content)
@@ -77,7 +67,7 @@ def test_create_file_duplicate(mocker):
     mocked_open().write.assert_called_with(my_content)
 
 
-def test_read_file(mocker):
+def test_read_file_success_flow(mocker):
 
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True) 
@@ -86,71 +76,78 @@ def test_read_file(mocker):
     mocked_open().read.return_value = file_content
 
     test_filename = "test_file_name"
-    another_filename = "another_file_name"
-
-    def os_path_isfile_side_effect(filename):
-        if filename == test_filename:
-            return True
-        return False
     
     mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.side_effect = os_path_isfile_side_effect
+    mock_isfile.return_value = True
 
     result = file_service.read_file(test_filename)
     
-    assert result == file_content
     mocked_open.assert_called_with(test_filename, "r")
     mocked_open().read.assert_called()
 
-    result = file_service.read_file(another_filename)
 
-    assert result == None
-    assert mocked_open().read.call_count == 1
+def test_read_file_not_existed(mocker):
 
-
-def test_delete_file(mocker):
+    mocked_open = mock_open()
+    mocker.patch("builtins.open", mocked_open, create=True) 
 
     test_filename = "test_file_name"
-    another_filename = "another_file_name"
-
-    def os_path_isfile_side_effect(filename):
-        if filename == test_filename:
-            return True
-        return False
     
     mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.side_effect = os_path_isfile_side_effect
+    mock_isfile.return_value = False
 
+    result = file_service.read_file(test_filename)
+    
+    mocked_open.assert_not_called()
+
+
+def test_delete_file_success_flow(mocker):
+
+    test_filename = "test_file_name"
+
+    mock_isfile = mocker.patch("os.path.isfile")
+    mock_isfile.return_value = True
     mock_remove = mocker.patch("os.remove")
     
     file_service.delete_file(test_filename)
 
     mock_remove.assert_called_with(test_filename)
+
+
+def test_delete_file_not_existed(mocker):
+
+    test_filename = "test_file_name"
+
+    mock_isfile = mocker.patch("os.path.isfile")
+    mock_isfile.return_value = False
+    mock_remove = mocker.patch("os.remove")
     
-    file_service.delete_file(another_filename)
+    file_service.delete_file(test_filename)
 
-    assert mock_remove.call_count == 1
+    mock_remove.assert_not_called()
 
 
-def test_change_dir(mocker):
+def test_change_dir_success_flow(mocker):
 
     test_dir = "test_dir"
-    another_dir = "another_dir"
 
-    def os_path_isdir_side_effect(dirname):
-        if dirname == test_dir:
-            return True
-        return False
-    
-    mock_isfile = mocker.patch("os.path.isdir")
-    mock_isfile.side_effect = os_path_isdir_side_effect
-
+    mock_isdir = mocker.patch("os.path.isdir")
+    mock_isdir.return_value = True
     mock_chdir = mocker.patch("os.chdir")
     
     file_service.change_dir(test_dir)
 
     mock_chdir.assert_called_with(test_dir)
-    
-    file_service.change_dir(another_dir)
 
-    assert mock_chdir.call_count == 1
+
+def test_change_dir_not_existed(mocker):
+
+    test_dir = "test_dir"
+
+    mock_isdir = mocker.patch("os.path.isdir")
+    mock_isdir.return_value = False
+    mock_chdir = mocker.patch("os.chdir")
+    
+    file_service.change_dir(test_dir)
+
+    mock_chdir.assert_not_called
