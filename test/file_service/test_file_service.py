@@ -151,3 +151,28 @@ def test_change_dir_not_existed(mocker):
     file_service.change_dir(test_dir)
 
     mock_chdir.assert_not_called
+
+
+def test_get_file_meta_data_success_flow(mocker):
+
+    test_filename = "test_file_name"
+
+    mock_os_stat = mocker.patch("os.stat")
+    mock_os_stat.return_value.st_ctime = 2347
+    mock_os_stat.return_value.st_mtime = 93465
+    mock_os_stat.return_value.st_size = 73457
+
+    mock_isfile = mocker.patch("os.path.isfile")
+    mock_isfile.return_value = True
+
+    assert file_service.get_file_meta_data(test_filename) == (2347, 93465, 73457)
+
+
+def test_get_file_meta_data_not_existed(mocker):
+
+    test_filename = "test_file_name"
+
+    mock_isfile = mocker.patch("os.path.isfile")
+    mock_isfile.return_value = False
+
+    assert file_service.get_file_meta_data(test_filename) == None
