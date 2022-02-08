@@ -1,9 +1,7 @@
 #! /usr/bin/env/ python
 
 import os
-import random
 from typing import Optional
-from xmlrpc.client import Boolean
 from src import utils
 
 
@@ -123,7 +121,7 @@ def change_dir(dirname: str) -> bool:
 
 def get_file_meta_data(filename: str) -> Optional[tuple]:
     '''
-    Read file creation date, modification date and filesize
+    Read file creation date, modification date and file size
 
     Parameters
     ------------

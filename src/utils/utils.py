@@ -4,5 +4,17 @@ import random
 import string
 
 def random_string(length):
-    r_string = ''.join(random.choice(string.ascii_letters + '0123456789') for i in range(length))
+    '''
+    Generate random string using ASCII letters and digits with needed length
+
+    Parameters
+    ------------
+        length: int
+            length of generated string
+
+    Returns
+    ------------
+        generated string
+    '''
+    r_string = ''.join(random.choice(string.ascii_letters + string.digits) for i in range(length))
     return r_string

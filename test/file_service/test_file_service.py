@@ -1,8 +1,22 @@
 #! /usr/bin/env/ python
 
-from src import file_service, utils
+import pytest
+from src import file_service
 from mock import mock_open
 import mock
+
+@pytest.fixture()
+def os_path_isfile_mocker_true(mocker):
+    os_path_file_mock = mocker.patch("os.path.isfile")
+    os_path_file_mock.return_value = True
+    return os_path_file_mock
+
+
+@pytest.fixture()
+def os_path_isfile_mocker_false(mocker):
+    os_path_file_mock = mocker.patch("os.path.isfile")
+    os_path_file_mock.return_value = False
+    return os_path_file_mock
 
 
 def test_list_dir(mocker):
@@ -67,7 +81,7 @@ def test_create_file_duplicate(mocker):
     mocked_open().write.assert_called_with(my_content)
 
 
-def test_read_file_success_flow(mocker):
+def test_read_file_success_flow(mocker, os_path_isfile_mocker_true):
 
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True) 
@@ -77,8 +91,7 @@ def test_read_file_success_flow(mocker):
 
     test_filename = "test_file_name"
     
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = True
+    mock_isfile = os_path_isfile_mocker_true
 
     result = file_service.read_file(test_filename)
     
@@ -86,27 +99,25 @@ def test_read_file_success_flow(mocker):
     mocked_open().read.assert_called()
 
 
-def test_read_file_not_existed(mocker):
+def test_read_file_not_existed(mocker, os_path_isfile_mocker_false):
 
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True) 
 
     test_filename = "test_file_name"
     
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = False
+    mock_isfile = os_path_isfile_mocker_false
 
     result = file_service.read_file(test_filename)
     
     mocked_open.assert_not_called()
 
 
-def test_delete_file_success_flow(mocker):
+def test_delete_file_success_flow(mocker, os_path_isfile_mocker_true):
 
     test_filename = "test_file_name"
 
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = True
+    mock_isfile = os_path_isfile_mocker_true
     mock_remove = mocker.patch("os.remove")
     
     file_service.delete_file(test_filename)
@@ -114,12 +125,11 @@ def test_delete_file_success_flow(mocker):
     mock_remove.assert_called_with(test_filename)
 
 
-def test_delete_file_not_existed(mocker):
+def test_delete_file_not_existed(mocker, os_path_isfile_mocker_false):
 
     test_filename = "test_file_name"
 
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = False
+    mock_isfile = os_path_isfile_mocker_false
     mock_remove = mocker.patch("os.remove")
     
     file_service.delete_file(test_filename)
@@ -153,7 +163,7 @@ def test_change_dir_not_existed(mocker):
     mock_chdir.assert_not_called
 
 
-def test_get_file_meta_data_success_flow(mocker):
+def test_get_file_meta_data_success_flow(mocker, os_path_isfile_mocker_true):
 
     test_filename = "test_file_name"
 
@@ -162,20 +172,18 @@ def test_get_file_meta_data_success_flow(mocker):
     mock_os_stat.return_value.st_mtime = 93465
     mock_os_stat.return_value.st_size = 73457
 
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = True
+    mock_isfile = os_path_isfile_mocker_true
 
     assert file_service.get_file_meta_data(test_filename) == (2347, 93465, 73457)
     mock_isfile.assert_called_with(test_filename)
     mock_os_stat.assert_called_with(test_filename)
 
 
-def test_get_file_meta_data_not_existed(mocker):
+def test_get_file_meta_data_not_existed(os_path_isfile_mocker_false):
 
     test_filename = "test_file_name"
 
-    mock_isfile = mocker.patch("os.path.isfile")
-    mock_isfile.return_value = False
+    mock_isfile = os_path_isfile_mocker_false
 
     assert file_service.get_file_meta_data(test_filename) == None
     mock_isfile.assert_called_with(test_filename)
