@@ -121,7 +121,7 @@ def change_dir(dirname: str) -> bool:
     return True
 
 
-def get_file_meta_data(filename: str) -> tuple:
+def get_file_meta_data(filename: str) -> Optional[tuple]:
     '''
     Read file creation date, modification date and filesize
 
@@ -134,10 +134,6 @@ def get_file_meta_data(filename: str) -> tuple:
     ------------
         (creation time, modification time, filesize): tuple
     '''
-    # os.path.getctime()
-    # os.path.getmtime()
-    # os.path.getsize()
-
     if not os.path.isfile(filename):
         return None
     

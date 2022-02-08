@@ -166,6 +166,8 @@ def test_get_file_meta_data_success_flow(mocker):
     mock_isfile.return_value = True
 
     assert file_service.get_file_meta_data(test_filename) == (2347, 93465, 73457)
+    mock_isfile.assert_called_with(test_filename)
+    mock_os_stat.assert_called_with(test_filename)
 
 
 def test_get_file_meta_data_not_existed(mocker):
@@ -176,3 +178,4 @@ def test_get_file_meta_data_not_existed(mocker):
     mock_isfile.return_value = False
 
     assert file_service.get_file_meta_data(test_filename) == None
+    mock_isfile.assert_called_with(test_filename)
