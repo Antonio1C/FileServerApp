@@ -1,13 +1,16 @@
 #! /usr/bin/env/ python
 
 import argparse
-from curses import meta
+from asyncio import streams
 from datetime import datetime
 from src import file_service
+import logging
+import yaml
+import logging.config
 
 def read_file():
     filename = input("Enter file name : ")
-    content = file_service.read_file(filename)
+    content = file_service.read_signature_file(filename)
     if content == None:
         print(f'file "{filename}" not exist!')
         return
@@ -16,7 +19,7 @@ def read_file():
 
 def create_file():
     content = input("Enter file content : ")
-    filename = file_service.create_file(content)
+    filename = file_service.create_signature_file(content)
     
     print(f"created file name: {filename}")
 
@@ -51,11 +54,20 @@ def get_file_meta_data():
 
 def main():
 
-    default_dir = './'
+    with open(file='./logging_config.yaml', mode='r') as f:
+        logging_yaml = yaml.load(stream=f, Loader=yaml.FullLoader)
+        logging.config.dictConfig(config=logging_yaml)
+
+    default_dir = './file_storage/'
+
+    logging.info('start server')
 
     parser = argparse.ArgumentParser("File server application")
     parser.add_argument("-d", "--directory", help='Set current directory', default=default_dir)
+    
+    logging.info('parse arguments')
     args = parser.parse_args()
+    logging.info(f"getting args: {args}")
 
     file_service.change_dir(args.directory)
     
@@ -71,15 +83,18 @@ def main():
     while True:
         command = input("Enter command: ")
         if command == "exit":
+            logging.info('stop server')
             return
         if command not in commands:
             print("Unknown command")
             continue
         command = commands[command]
         try:
+            logging.info(f'executing command: {command}')
             command()
         except Exception as ex:
-            print(f"Error on {command} execution : {ex}")
+            err_text = f"Error on {command} execution : {ex}"
+            logging.error(err_text)
 
 
 if __name__ == "__main__":
