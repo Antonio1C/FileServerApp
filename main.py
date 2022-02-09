@@ -1,7 +1,6 @@
 #! /usr/bin/env/ python
 
 import argparse
-from asyncio import streams
 from datetime import datetime
 from src import file_service
 import logging
@@ -19,7 +18,7 @@ def read_file():
 
 def create_file():
     content = input("Enter file content : ")
-    filename = file_service.create_signature_file(content)
+    filename = file_service.create_signature_file(content, 'md5')
     
     print(f"created file name: {filename}")
 
@@ -88,10 +87,18 @@ def main():
         if command not in commands:
             print("Unknown command")
             continue
+        
         command = commands[command]
+        
         try:
             logging.info(f'executing command: {command}')
             command()
+        except file_service.FileBroken as ex:
+            err_text = f'sorry, the file "{ex.args[0]}" was broken'
+            logging.error(err_text)
+        except FileNotFoundError as ex:
+            err_text = f'unfortunately file "{ex.args[0]}" not found, please, check the file name'
+            logging.error(err_text)
         except Exception as ex:
             err_text = f"Error on {command} execution : {ex}"
             logging.error(err_text)

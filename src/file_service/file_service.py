@@ -4,6 +4,13 @@ import os
 from typing import Optional
 from src import utils, crypto
 
+class FileBroken(Exception):
+    pass
+
+
+class SignLabelIsIncorrect(Exception):
+    pass
+
 
 def unique_filename(length: int=8) -> str:
     '''
@@ -48,7 +55,7 @@ def create_file(content: str) -> str:
     return filename
 
 
-def create_signature_file(content: str) -> str:
+def create_signature_file(content: str, sign_label: str) -> str:
     '''
     Create file from user content with unique file name
     and also files with hash
@@ -62,13 +69,16 @@ def create_signature_file(content: str) -> str:
     ------------
         name of created file
     '''
+    Signer = crypto.SignatureFactory.get_signer(sign_label)
+    if Signer == None:
+        raise SignLabelIsIncorrect(sign_label)
+    
+    signer = Signer()
+
     filename = create_file(content)
-    signers = crypto.SignatureFactory.signers
-    for label in signers:
-        signer = signers[label]()
-        hash = signer(content)
-        with open(f'{filename}.{label}', 'w') as file:
-            file.write(hash)
+    sign = signer(content)
+    with open(f'{filename}.{sign_label}', 'w') as file:
+        file.write(sign)
     
     return filename
 
@@ -86,7 +96,7 @@ def read_file(filename: str) -> Optional[str]:
         content of file or raise exception "FileNotFound" if file doesn't exist
     '''
     if not os.path.isfile(filename):
-        raise Exception("FileNotFound")
+        raise FileNotFoundError(filename)
     
     with open(filename, "r") as f:
         data = f.read()
@@ -128,8 +138,8 @@ def read_signature_file(filename: str) -> str:
         actual_hash = signers[label]()(content)
         sign_checked = sign_checked & (expected_hash == actual_hash)
     
-    if sign_file_exist and not sign_checked:
-        raise Exception("FileBroken")
+    if not sign_file_exist or not sign_checked:
+        raise FileBroken(filename)
     
     return content
             
@@ -147,7 +157,7 @@ def delete_file(filename: str) -> None:
         None
     '''
     if not os.path.isfile(filename):
-        raise Exception("FileNotFound")
+        raise FileNotFoundError
 
     os.remove(filename)
 
@@ -178,7 +188,7 @@ def change_dir(dirname: str) -> bool:
         False: if changed wasn't successful
     '''
     if not os.path.isdir(dirname):
-        raise Exception("DirectoryNotFound")
+        raise NotADirectoryError
 
     os.chdir(dirname)
     return True

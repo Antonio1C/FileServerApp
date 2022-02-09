@@ -1,7 +1,7 @@
 #! /usr/bin/env/ python
 
 import pytest
-from src import file_service
+from src import file_service, crypto
 from mock import mock_open
 import mock
 
@@ -31,13 +31,37 @@ def test_create_file(mocker):
     mocker.patch("builtins.open", mocked_open, create=True)
     
     random_file_name = 'test_random_string'
-    mocker.patch("src.file_service.file_service.unique_filename").return_value = random_file_name
+    mocker.patch("src.utils.random_string").return_value = random_file_name
 
     my_content = "my content"
     file_service.create_file(my_content)
 
     mocked_open.assert_called_with(random_file_name, 'w')
     mocked_open().write.assert_called_with(my_content)
+
+
+def test_create_signature_file(mocker):
+    test_file_name = 'test_file_name'
+    test_label = 'test_label'
+
+    mock_create_file = mocker.patch('src.file_service.file_service.create_file')
+    mock_create_file.return_value = test_file_name
+
+    mock_get_signer = mocker.patch('src.crypto.SignatureFactory.get_signer')
+    mock_get_signer.return_value = crypto.Md5Signer
+
+    mocked_open = mock_open()
+    mocker.patch("builtins.open", mocked_open, create=True)
+
+    file_content = 'test file content'
+    file_service.create_signature_file(file_content, test_label)
+
+    expected_sign = crypto.Md5Signer()(file_content)
+
+    sign_file_name = f'{test_file_name}.{test_label}'
+
+    mocked_open.assert_called_with(sign_file_name, 'w')
+    mocked_open().write.assert_called_with(expected_sign)
 
 
 def test_create_file_duplicate(mocker):
@@ -108,9 +132,10 @@ def test_read_file_not_existed(mocker, os_path_isfile_mocker_false):
     
     mock_isfile = os_path_isfile_mocker_false
 
-    result = file_service.read_file(test_filename)
+    with pytest.raises(FileNotFoundError):
+        result = file_service.read_file(test_filename)
     
-    mocked_open.assert_not_called()
+    mock_isfile.assert_called_with(test_filename)
 
 
 def test_delete_file_success_flow(mocker, os_path_isfile_mocker_true):
@@ -122,6 +147,7 @@ def test_delete_file_success_flow(mocker, os_path_isfile_mocker_true):
     
     file_service.delete_file(test_filename)
 
+    mock_isfile.assert_called_with(test_filename)
     mock_remove.assert_called_with(test_filename)
 
 
@@ -132,9 +158,10 @@ def test_delete_file_not_existed(mocker, os_path_isfile_mocker_false):
     mock_isfile = os_path_isfile_mocker_false
     mock_remove = mocker.patch("os.remove")
     
-    file_service.delete_file(test_filename)
+    with pytest.raises(FileNotFoundError):
+        file_service.delete_file(test_filename)
 
-    mock_remove.assert_not_called()
+    mock_isfile.assert_called_with(test_filename)
 
 
 def test_change_dir_success_flow(mocker):
@@ -147,6 +174,7 @@ def test_change_dir_success_flow(mocker):
     
     file_service.change_dir(test_dir)
 
+    mock_isdir.assert_called_with(test_dir)
     mock_chdir.assert_called_with(test_dir)
 
 
@@ -158,9 +186,10 @@ def test_change_dir_not_existed(mocker):
     mock_isdir.return_value = False
     mock_chdir = mocker.patch("os.chdir")
     
-    file_service.change_dir(test_dir)
+    with pytest.raises(NotADirectoryError):
+        file_service.change_dir(test_dir)
 
-    mock_chdir.assert_not_called
+    mock_isdir.assert_called_with(test_dir)
 
 
 def test_get_file_meta_data_success_flow(mocker, os_path_isfile_mocker_true):
@@ -187,3 +216,4 @@ def test_get_file_meta_data_not_existed(os_path_isfile_mocker_false):
 
     assert file_service.get_file_meta_data(test_filename) == None
     mock_isfile.assert_called_with(test_filename)
+

@@ -6,3 +6,4 @@ from .file_service import read_signature_file
 from .file_service import change_dir
 from .file_service import list_dir
 from .file_service import delete_file
+from .file_service import FileBroken
