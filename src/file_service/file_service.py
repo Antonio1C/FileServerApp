@@ -133,15 +133,11 @@ def read_signature_file(filename: str) -> str:
         with open(sign_filename, 'r') as file:
             expected_hash = file.read()
         
-        sign_file_exist = True
-        
         actual_hash = signers[label]()(content)
-        sign_checked = sign_checked & (expected_hash == actual_hash)
-    
-    if not sign_file_exist or not sign_checked:
-        raise FileBroken(filename)
-    
-    return content
+        if expected_hash == actual_hash:
+            return content
+        
+    raise FileBroken(filename)
             
 
 def delete_file(filename: str) -> None:
