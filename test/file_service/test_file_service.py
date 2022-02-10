@@ -2,6 +2,7 @@
 
 import pytest
 from src import file_service, crypto
+from src.crypto import SignatureFactory
 from mock import mock_open
 import mock
 
@@ -40,30 +41,106 @@ def test_create_file(mocker):
     mocked_open().write.assert_called_with(my_content)
 
 
-def test_create_signature_file(mocker):
+def test_create_signed_file_success_flow(mocker):
     test_file_name = 'test_file_name'
     test_label = 'test_label'
 
     mock_create_file = mocker.patch('src.file_service.file_service.create_file')
     mock_create_file.return_value = test_file_name
 
+    signer = list(SignatureFactory.signers.values())[0]
     mock_get_signer = mocker.patch('src.crypto.SignatureFactory.get_signer')
-    mock_get_signer.return_value = crypto.Md5Signer
+    mock_get_signer.return_value = signer
 
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True)
 
     file_content = 'test file content'
-    file_service.create_signature_file(file_content, test_label)
+    file_service.create_signed_file(file_content, test_label)
 
-    expected_sign = crypto.Md5Signer()(file_content)
+    expected_sign = signer(file_content)
 
-    sign_file_name = f'{test_file_name}.{test_label}'
+    sign_file_name = signer.get_sign_filename(test_file_name)
 
     mocked_open.assert_called_with(sign_file_name, 'w')
     mocked_open().write.assert_called_with(expected_sign)
 
 
+def test_create_signed_file_incorrect_label():
+    
+    with pytest.raises(file_service.SignLabelIsIncorrect):
+        file_service.create_signed_file('test_content', 'incorrect_label')
+
+
+def test_read_signed_file_success_flow(mocker):
+    test_file_name = 'test_file_name'
+    test_file_content = 'test file content'
+
+    mock_create_file = mocker.patch('src.file_service.file_service.read_file')
+    mock_create_file.return_value = test_file_content
+
+    signer = list(SignatureFactory.signers.values())[0]
+    signature_filename = signer.get_sign_filename(test_file_name)
+    content_hash = signer(test_file_content)
+    
+    def os_path_exists_side_effect(filename):
+        if filename == signature_filename: return True
+        return False
+    
+    mock_is_file_exist = mocker.patch("os.path.exists")
+    mock_is_file_exist.side_effect = os_path_exists_side_effect
+    
+    mocked_open = mock_open()
+    mocker.patch("builtins.open", mocked_open, create=True)
+    mocked_open().read.return_value = content_hash
+
+    read_content = file_service.read_signed_file(test_file_name)
+
+    mocked_open.assert_called_with(signature_filename, 'r')
+    mocked_open().read.assert_called()
+    assert test_file_content == read_content 
+
+
+def test_read_signed_file_incorrect_hash(mocker):
+    
+    test_file_name = 'test_file_name'
+    test_file_content = 'test file content'
+
+    mock_create_file = mocker.patch('src.file_service.file_service.read_file')
+    mock_create_file.return_value = test_file_content
+
+    signer = list(SignatureFactory.signers.values())[0]
+    signed_filename = signer.get_sign_filename(test_file_name)
+    
+    def os_path_exists_side_effect(filename):
+        if filename == signed_filename: return True
+        return False
+    
+    mock_is_file_exist = mocker.patch("os.path.exists")
+    mock_is_file_exist.side_effect = os_path_exists_side_effect
+    
+    mocked_open = mock_open()
+    mocker.patch("builtins.open", mocked_open, create=True)
+    mocked_open().read.return_value = 'incorrect_hash'
+
+    with pytest.raises(file_service.FileBroken):
+        read_content = file_service.read_signed_file(test_file_name)
+
+
+def test_read_signed_file_without_signature_file(mocker):
+    
+    test_file_name = 'test_file_name'
+    test_file_content = 'test file content'
+
+    mock_create_file = mocker.patch('src.file_service.file_service.read_file')
+    mock_create_file.return_value = test_file_content
+
+    mocker.patch("os.path.exists").return_value = False
+    
+    with pytest.raises(file_service.FileBroken):
+        read_content = file_service.read_signed_file(test_file_name)
+
+ 
 def test_create_file_duplicate(mocker):
 
     mocked_open = mock_open()

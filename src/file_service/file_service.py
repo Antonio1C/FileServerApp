@@ -2,7 +2,8 @@
 
 import os
 from typing import Optional
-from src import utils, crypto
+from src import utils
+from src.crypto import SignatureFactory
 
 class FileBroken(Exception):
     pass
@@ -55,7 +56,7 @@ def create_file(content: str) -> str:
     return filename
 
 
-def create_signature_file(content: str, sign_label: str) -> str:
+def create_signed_file(content: str, sign_label: str) -> str:
     '''
     Create file from user content with unique file name
     and also files with hash
@@ -69,15 +70,13 @@ def create_signature_file(content: str, sign_label: str) -> str:
     ------------
         name of created file
     '''
-    Signer = crypto.SignatureFactory.get_signer(sign_label)
-    if Signer == None:
+    signer = SignatureFactory.get_signer(sign_label)
+    if signer == None:
         raise SignLabelIsIncorrect(sign_label)
     
-    signer = Signer()
-
     filename = create_file(content)
     sign = signer(content)
-    with open(f'{filename}.{sign_label}', 'w') as file:
+    with open(signer.get_sign_filename(filename), 'w') as file:
         file.write(sign)
     
     return filename
@@ -104,7 +103,7 @@ def read_file(filename: str) -> Optional[str]:
     return data
 
 
-def read_signature_file(filename: str) -> str:
+def read_signed_file(filename: str) -> str:
     '''
     Read file using recieved file name. Also it cheched for sign
 
@@ -120,25 +119,25 @@ def read_signature_file(filename: str) -> str:
 
     content = read_file(filename)
     
-    signers = crypto.SignatureFactory.signers
-
-    sign_checked = True
-    sign_file_exist = False
+    signers = SignatureFactory.signers
 
     for label in signers:
-        sign_filename = f'{filename}.{label}'
+
+        signer = signers.get(label)
+
+        sign_filename = signer.get_sign_filename(filename)
         if not os.path.exists(sign_filename):
             continue
 
         with open(sign_filename, 'r') as file:
             expected_hash = file.read()
         
-        actual_hash = signers[label]()(content)
+        actual_hash = signer(content)
         if expected_hash == actual_hash:
             return content
         
     raise FileBroken(filename)
-            
+
 
 def delete_file(filename: str) -> None:
     '''

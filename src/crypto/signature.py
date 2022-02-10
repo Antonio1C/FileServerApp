@@ -11,9 +11,15 @@ class SignatureFactory(type):
 
         signer_class = type(classname, parents, attributes)
         if 'label' not in attributes:
-            signer_class.label = classname
+            signer_class.label = classname.lower()
+        
+        def get_sign_filename(self, filename: str) -> str:
+            return f'{filename}.{self.label}'
+        
+        signer_class.get_sign_filename = get_sign_filename
 
-        SignatureFactory.signers[signer_class.label] = signer_class
+        SignatureFactory.signers[signer_class.label] = signer_class()
+
         return signer_class
 
     @staticmethod

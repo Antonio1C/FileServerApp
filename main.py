@@ -9,7 +9,7 @@ import logging.config
 
 def read_file():
     filename = input("Enter file name : ")
-    content = file_service.read_signature_file(filename)
+    content = file_service.read_signed_file(filename)
     if content == None:
         print(f'file "{filename}" not exist!')
         return
@@ -18,7 +18,7 @@ def read_file():
 
 def create_file():
     content = input("Enter file content : ")
-    filename = file_service.create_signature_file(content, 'md5')
+    filename = file_service.create_signed_file(content, 'md5')
     
     print(f"created file name: {filename}")
 
