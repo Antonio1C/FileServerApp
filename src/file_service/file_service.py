@@ -1,209 +1,39 @@
 #! /usr/bin/env/ python
 
-import os
 from typing import Optional
-from src import utils
-from src.crypto import SignatureFactory
-
-class FileBroken(Exception):
-    pass
+from abc import ABCMeta, abstractmethod
 
 
-class SignLabelIsIncorrect(Exception):
-    pass
+class FileService(metaclass=ABCMeta):
 
-
-def unique_filename(length: int=8) -> str:
-    '''
-    Generate unique file name with needed length
-
-    Parameters
-    ------------
-        length: int
-            length of generated file name
-
-    Returns
-    ------------
-        generated file name
-    '''
-    filename = ''
-    while True:
-        filename = utils.random_string(length)
-        if not os.path.exists(filename):
-            break
-
-    return filename
-
-
-def create_file(content: str) -> str:
-    '''
-    Create file from user content with unique file name
-
-    Parameters
-    ------------
-        content: str
-            content for new file
-
-    Returns
-    ------------
-        name of created file
-    '''
-    filename = unique_filename(6)
+    @abstractmethod
+    def pwd(self) -> str: raise Exception('not implemented')
     
-    with open(filename, "w") as f:
-        f.write(content)
-
-    return filename
-
-
-def create_signed_file(content: str, sign_label: str) -> str:
-    '''
-    Create file from user content with unique file name
-    and also files with hash
-
-    Parameters
-    ------------
-        content: str
-            content for new file
-
-    Returns
-    ------------
-        name of created file
-    '''
-    signer = SignatureFactory.get_signer(sign_label)
-    if signer == None:
-        raise SignLabelIsIncorrect(sign_label)
     
-    filename = create_file(content)
-    sign = signer(content)
-    with open(signer.get_sign_filename(filename), 'w') as file:
-        file.write(sign)
-    
-    return filename
+    @abstractmethod
+    def abspath(self, fd_name:str) -> str: raise Exception('not implemented')
 
 
-def read_file(filename: str) -> Optional[str]:
-    '''
-    Read file using recieved file name
-
-    Parameters
-    ------------
-        filename: str
-
-    Returns
-    ------------
-        content of file or raise exception "FileNotFound" if file doesn't exist
-    '''
-    if not os.path.isfile(filename):
-        raise FileNotFoundError(filename)
-    
-    with open(filename, "r") as f:
-        data = f.read()
-    
-    return data
+    @abstractmethod
+    def create(self, data: str) -> str: raise Exception('not implemented')
 
 
-def read_signed_file(filename: str) -> str:
-    '''
-    Read file using recieved file name. Also it cheched for sign
-
-    Parameters
-    ------------
-        filename: str
-
-    Returns
-    ------------
-        content of file or raise exception "FileNotFound" if file doesn't exist
-        or "FileBroken" if the file is not validate
-    '''
-
-    content = read_file(filename)
-    
-    signers = SignatureFactory.signers
-
-    for label in signers:
-
-        signer = signers.get(label)
-
-        sign_filename = signer.get_sign_filename(filename)
-        if not os.path.exists(sign_filename):
-            continue
-
-        with open(sign_filename, 'r') as file:
-            expected_hash = file.read()
-        
-        actual_hash = signer(content)
-        if expected_hash == actual_hash:
-            return content
-        
-    raise FileBroken(filename)
+    @abstractmethod
+    def read(self, filename: str) -> Optional[str]: raise Exception('not implemented')
 
 
-def delete_file(filename: str) -> None:
-    '''
-    Delete file by name
-
-    Parameters
-    ------------
-        filename: str
-
-    Returns
-    ------------
-        None
-    '''
-    if not os.path.isfile(filename):
-        raise FileNotFoundError
-
-    os.remove(filename)
+    @abstractmethod
+    def ls(self) -> list: raise Exception('not implemented')
 
 
-def list_dir() -> list:
-    '''
-    Return list of directories and files in current directory
-
-    Returns
-    ------------
-        list of directories and files in current directory
-    '''
-    return os.listdir()
+    @abstractmethod
+    def chdir(self, new_directory): raise Exception('not implemented')
 
 
-def change_dir(dirname: str) -> bool:
-    '''
-    Change current directory using new directory name
-
-    Parameters
-    ------------
-        dirname: str
-            name of new directory
-
-    Returns
-    ------------
-        True: if changed was successful
-        False: if changed wasn't successful
-    '''
-    if not os.path.isdir(dirname):
-        raise NotADirectoryError
-
-    os.chdir(dirname)
-    return True
+    @abstractmethod
+    def delete(self, filename: str): raise Exception('not implemented')
 
 
-def get_file_meta_data(filename: str) -> Optional[tuple]:
-    '''
-    Read file creation date, modification date and file size
+    @abstractmethod
+    def get_meta_data(self, filename: str) -> tuple: raise Exception('not implemented')
 
-    Parameters
-    ------------
-        filename: str
-            filename to read
-
-    Returns
-    ------------
-        (creation time, modification time, filesize): tuple
-    '''
-    if not os.path.isfile(filename):
-        return None
-    
-    file_stat = os.stat(filename)
-    return (file_stat.st_ctime, file_stat.st_mtime, file_stat.st_size)

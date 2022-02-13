@@ -1,6 +1,10 @@
 import hashlib
 
 
+class SignLabelIsIncorrect(Exception):
+    pass
+
+
 class SignatureFactory(type):
 
     signers = {}
@@ -24,7 +28,9 @@ class SignatureFactory(type):
 
     @staticmethod
     def get_signer(label: str):
-        return SignatureFactory.signers.get(label)
+        signer = SignatureFactory.signers.get(label)
+        if signer == None: raise SignLabelIsIncorrect(f"Didn't find signer by '{label}' label")
+        return signer
 
 class Md5Signer(metaclass=SignatureFactory):
 

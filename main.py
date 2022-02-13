@@ -3,44 +3,43 @@
 import argparse
 from datetime import datetime
 from src import file_service
+from src.config import Config
+from src.file_service import FileService, RawFileService, SignedFileService
+from src.file_service import signed_file_service
 import logging
 import yaml
 import logging.config
 
-def read_file():
+def read_file(f_service):
     filename = input("Enter file name : ")
-    content = file_service.read_signed_file(filename)
-    if content == None:
-        print(f'file "{filename}" not exist!')
-        return
+    content = f_service.read(filename)
     print(f'Content: {content}')
 
 
-def create_file():
+def create_file(f_service):
     content = input("Enter file content : ")
-    filename = file_service.create_signed_file(content, 'md5')
+    filename = f_service.create(content)
     
     print(f"created file name: {filename}")
 
 
-def delete_file():
+def delete_file(f_service):
     filename = input("Enter file name : ")
-    file_service.delete_file(filename)
+    f_service.delete(filename)
 
 
-def list_dir():
-    print(file_service.list_dir())
+def list_dir(f_service):
+    print(f_service.ls())
 
 
-def change_dir():
+def change_dir(f_service: FileService):
     directory = input("Enter directory name : ")
-    if file_service.change_dir(directory):
-        print(f"new directory: {directory}")
+    f_service.chdir(directory)
 
 
-def get_file_meta_data():
+def get_file_meta_data(f_service):
     filename = input("Enter file name: ")
-    meta_data = file_service.get_file_meta_data(filename)
+    meta_data = f_service.get_meta_data(filename)
     if meta_data == None:
         return
     
@@ -51,24 +50,33 @@ def get_file_meta_data():
     print(f'Creation time: {ctime}\nModification time: {mtime}\nFile size: {fsize}')
 
 
+def pwd(f_service: FileService):
+    print(f_service.pwd())
+    
+
 def main():
 
     with open(file='./logging_config.yaml', mode='r') as f:
         logging_yaml = yaml.load(stream=f, Loader=yaml.FullLoader)
-        logging.config.dictConfig(config=logging_yaml)
-
-    default_dir = './file_storage/'
+    
+    logging.config.dictConfig(config=logging_yaml)
 
     logging.info('start server')
 
+    default_dir = './file_storage'
+
     parser = argparse.ArgumentParser("File server application")
     parser.add_argument("-d", "--directory", help='Set current directory', default=default_dir)
+    parser.add_argument('-c', '--config', help='file with server configuration', default='config.ini')
     
     logging.info('parse arguments')
     args = parser.parse_args()
     logging.info(f"getting args: {args}")
 
-    file_service.change_dir(args.directory)
+    config = Config()
+    config.load(args.config)
+    
+    sign_fs = SignedFileService(RawFileService(args.directory))
     
     commands = {
         "get": read_file,
@@ -76,6 +84,7 @@ def main():
         "delete": delete_file,
         "ls": list_dir,
         "cd": change_dir,
+        "pwd": pwd,
         "meta": get_file_meta_data,
     }
 
@@ -92,8 +101,8 @@ def main():
         
         try:
             logging.info(f'executing command: {command}')
-            command()
-        except file_service.FileBroken as ex:
+            command(sign_fs)
+        except signed_file_service.FileBroken as ex:
             err_text = f'sorry, the file "{ex.args[0]}" was broken'
             logging.error(err_text)
         except FileNotFoundError as ex:
