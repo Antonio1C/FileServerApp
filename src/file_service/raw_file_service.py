@@ -59,7 +59,7 @@ class RawFileService(FileService):
         filename = RawFileService.unique_filename(6)
         abs_path_filename = self.abspath(filename)
         
-        with open(abs_path_filename, "w") as file:
+        with open(abs_path_filename, "wb") as file:
             file.write(data)
 
         return filename

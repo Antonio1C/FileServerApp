@@ -5,6 +5,7 @@ from src import utils
 class Config(metaclass=utils.Singleton):
 
     SIGNATURE_SECTION = 'SIGNATURE'
+    ENCRYPTION_SECTION = 'ENCRYPTION'
 
     def __init__(self):
         if not 'config_data' in self.__dict__:
@@ -49,3 +50,27 @@ class Config(metaclass=utils.Singleton):
         
         section = config_data[Config.SIGNATURE_SECTION]
         return section[signature_dir]
+    
+
+    def encryption_type(self) -> str:
+        default_value = 'aes'
+        enc_type = 'encryption_type'
+
+        config_data = self.config_data
+        if not Config.check_config_data(config_data, Config.ENCRYPTION_SECTION, enc_type):
+            return default_value
+        
+        section = config_data[Config.ENCRYPTION_SECTION]
+        return section[enc_type]
+    
+    
+    def encryption_keys_path(self):
+        default_path = '.'
+        keys_path = 'encryption_keys_path'
+
+        config_data = self.config_data
+        if not Config.check_config_data(config_data, Config.ENCRYPTION_SECTION, keys_path):
+            return default_path
+        
+        section = config_data[Config.ENCRYPTION_SECTION]
+        return section[keys_path]

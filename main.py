@@ -2,13 +2,15 @@
 
 import argparse
 from datetime import datetime
-from src import file_service
 from src.config import Config
+from src.crypto.encryption import HybridEncryption, SymetricEncryption
 from src.file_service import FileService, RawFileService, SignedFileService
-from src.file_service import signed_file_service
+from src.file_service import FileBroken
 import logging
 import yaml
 import logging.config
+
+from src.file_service.encrypted_file_service import EncryptedFileService
 
 def read_file(f_service):
     filename = input("Enter file name : ")
@@ -76,7 +78,12 @@ def main():
     config = Config()
     config.load(args.config)
     
-    sign_fs = SignedFileService(RawFileService(args.directory))
+    # create instances for encryption
+    hybrid_encr = HybridEncryption()
+    
+    raw_fs = RawFileService(args.directory)
+    sign_fs = SignedFileService(raw_fs)
+    encr_fs = EncryptedFileService(sign_fs)
     
     commands = {
         "get": read_file,
@@ -99,18 +106,18 @@ def main():
         
         command = commands[command]
         
-        try:
-            logging.info(f'executing command: {command}')
-            command(sign_fs)
-        except signed_file_service.FileBroken as ex:
-            err_text = f'sorry, the file "{ex.args[0]}" was broken'
-            logging.error(err_text)
-        except FileNotFoundError as ex:
-            err_text = f'unfortunately file "{ex.args[0]}" not found, please, check the file name'
-            logging.error(err_text)
-        except Exception as ex:
-            err_text = f"Error on {command} execution : {ex}"
-            logging.error(err_text)
+        # try:
+        logging.info(f'executing command: {command}')
+        command(raw_fs)
+        # except FileBroken as ex:
+            # err_text = f'sorry, the file "{ex.args[0]}" was broken'
+            # logging.error(err_text)
+        # except FileNotFoundError as ex:
+            # err_text = f'unfortunately file "{ex.args[0]}" not found, please, check the file name'
+            # logging.error(err_text)
+        # except Exception as ex:
+            # err_text = f"Error on {command} execution : {ex}"
+            # logging.error(err_text)
 
 
 if __name__ == "__main__":
