@@ -9,6 +9,8 @@ from src.file_service import FileBroken
 import logging
 import yaml
 import logging.config
+from aiohttp import web
+from src.http_server import create_web_app
 
 from src.file_service.encrypted_file_service import EncryptedFileService
 
@@ -56,7 +58,7 @@ def pwd(f_service: FileService):
     print(f_service.pwd())
     
 
-def main():
+def console_main():
 
     with open(file='./logging_config.yaml', mode='r') as f:
         logging_yaml = yaml.load(stream=f, Loader=yaml.FullLoader)
@@ -118,6 +120,37 @@ def main():
         # except Exception as ex:
             # err_text = f"Error on {command} execution : {ex}"
             # logging.error(err_text)
+
+def main():
+    with open(file='./logging_config.yaml', mode='r') as f:
+        logging_yaml = yaml.load(stream=f, Loader=yaml.FullLoader)
+    
+    logging.config.dictConfig(config=logging_yaml)
+
+    logging.info('start server')
+
+    default_dir = './file_storage'
+
+    parser = argparse.ArgumentParser("File server application")
+    parser.add_argument("-d", "--directory", help='Set current directory', default=default_dir)
+    parser.add_argument('-c', '--config', help='file with server configuration', default='config.ini')
+    
+    logging.info('parse arguments')
+    args = parser.parse_args()
+    logging.info(f"getting args: {args}")
+
+    config = Config()
+    config.load(args.config)
+    
+    # create instances for encryption
+    hybrid_encr = HybridEncryption()
+    
+    raw_fs = RawFileService(args.directory)
+    sign_fs = SignedFileService(raw_fs)
+    encr_fs = EncryptedFileService(sign_fs)
+
+    app = create_web_app(encr_fs)
+    web.run_app(app)
 
 
 if __name__ == "__main__":

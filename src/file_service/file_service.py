@@ -1,6 +1,7 @@
 #! /usr/bin/env/ python
 
-from typing import Optional
+from datetime import datetime
+from typing import Tuple
 from abc import ABCMeta, abstractmethod
 
 
@@ -15,11 +16,11 @@ class FileService(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def create(self, data: str) -> str: raise Exception('not implemented')
+    def create(self, data: bytes) -> str: raise Exception('not implemented')
 
 
     @abstractmethod
-    def read(self, filename: str) -> Optional[str]: raise Exception('not implemented')
+    def read(self, filename: str) -> bytes: raise Exception('not implemented')
 
 
     @abstractmethod
@@ -27,7 +28,7 @@ class FileService(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def chdir(self, new_directory): raise Exception('not implemented')
+    def chdir(self, new_directory: str): raise Exception('not implemented')
 
 
     @abstractmethod
@@ -35,5 +36,5 @@ class FileService(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def get_meta_data(self, filename: str) -> tuple: raise Exception('not implemented')
+    def get_meta_data(self, filename: str) -> Tuple[str, str, int]: raise Exception('not implemented')
 

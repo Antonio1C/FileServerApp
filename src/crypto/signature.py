@@ -35,20 +35,13 @@ class SignatureFactory(type):
 class Md5Signer(metaclass=SignatureFactory):
 
     label = 'md5'
-    def __call__(self, string_data: str) -> str:
-        
-        if isinstance(string_data, bytes):
-            return hashlib.md5(string_data).hexdigest()
-            
-        return hashlib.md5(string_data.encode()).hexdigest()
+    def __call__(self, string_data: bytes) -> str:
+        return hashlib.md5(string_data).hexdigest()
 
 
 class Sha512Signer(metaclass=SignatureFactory):
 
     label = 'sha512'
-    def __call__(self, string_data: str) -> str:
+    def __call__(self, string_data: bytes) -> str:
         
-        if isinstance(string_data, bytes):
-            return hashlib.sha512(string_data).hexdigest()
-            
-        return hashlib.sha512(string_data.encode()).hexdigest()
+        return hashlib.sha512(string_data).hexdigest()

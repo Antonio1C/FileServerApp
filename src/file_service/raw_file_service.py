@@ -1,6 +1,7 @@
+from datetime import datetime
 import os
 from src import utils
-from typing import Optional
+from typing import Optional, Tuple, Union
 from src.file_service import FileService
 
 class RawFileService(FileService):
@@ -43,7 +44,7 @@ class RawFileService(FileService):
         return '/'.join([self.pwd(), fd_name])
 
 
-    def create(self, data: str) -> str:
+    def create(self, data: bytes) -> str:
         '''
         Create file from user content with unique file name
 
@@ -65,7 +66,7 @@ class RawFileService(FileService):
         return filename
 
 
-    def read(self, filename: str) -> Optional[str]:
+    def read(self, filename: str) -> bytes:
         '''
         Read file using recieved file name
 
@@ -81,7 +82,7 @@ class RawFileService(FileService):
         if not os.path.isfile(abs_path_file):
             raise FileNotFoundError(abs_path_file)
         
-        with open(abs_path_file, "r") as file:
+        with open(abs_path_file, "rb") as file:
             data = file.read()
         
         return data
@@ -98,7 +99,7 @@ class RawFileService(FileService):
         return os.listdir(path=self.work_dir)
 
 
-    def chdir(self, new_directory):
+    def chdir(self, new_directory: str) -> None:
         '''
         Change current directory using new directory name
 
@@ -134,7 +135,7 @@ class RawFileService(FileService):
 
         os.remove(abs_path)
 
-    def get_meta_data(self, filename: str):
+    def get_meta_data(self, filename: str) -> Tuple[str, str, int]:
         '''
         Read file creation date, modification date and file size
 
@@ -149,7 +150,11 @@ class RawFileService(FileService):
         '''
         abspath = self.abspath(filename)
         if not os.path.isfile(abspath):
-            return None
+            raise FileNotFoundError
         
         file_stat = os.stat(abspath)
-        return (file_stat.st_ctime, file_stat.st_mtime, file_stat.st_size)
+        ctime = datetime.fromtimestamp(file_stat.st_ctime).strftime('%m/%d/%Y %H:%M:%S')
+        mtime = datetime.fromtimestamp(file_stat.st_mtime).strftime('%m/%d/%Y %H:%M:%S')
+        fsize = file_stat.st_size
+
+        return (ctime, mtime, fsize)

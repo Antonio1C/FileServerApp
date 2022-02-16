@@ -1,5 +1,3 @@
-
-
 import os
 from typing import List, Tuple
 from src.crypto import Encryption
@@ -16,7 +14,7 @@ class EncryptedFileService(FileService):
     def read(self, filename : str) -> str:
         encryptor = Encryption.get_encryptor(filename)
         key_file_name = encryptor.key_filename(filename)
-        with open(key_file_name) as file:
+        with open(key_file_name, 'rb') as file:
             key = file.read()
         encrypted_data = self.wrapped_fs.read(filename)
         decrypted_data = encryptor.decrypt(encrypted_data, key)
@@ -49,7 +47,7 @@ class EncryptedFileService(FileService):
         
 
     def get_meta_data(self, filename: str) -> Tuple[int, int, int]:
-        return self.wrapped_fs.read_metadata(filename)
+        return self.wrapped_fs.get_meta_data(filename)
 
 
     def pwd(self) -> str:

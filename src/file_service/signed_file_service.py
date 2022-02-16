@@ -27,7 +27,7 @@ class SignedFileService(FileService):
         return '/'.join([self.signature_dir, fd_name])
 
 
-    def create(self, data):
+    def create(self, data: bytes) -> str:
         '''
         Create file from user content with unique file name
         and also files with hash
@@ -51,7 +51,7 @@ class SignedFileService(FileService):
 
         return filename
 
-    def read(self, filename):
+    def read(self, filename: str) -> bytes:
         '''
         Read file using recieved file name. Also it cheched for sign
 
