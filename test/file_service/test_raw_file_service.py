@@ -2,7 +2,6 @@
 
 import pytest
 from src.file_service import RawFileService
-from src.crypto import SignatureFactory
 from mock import mock_open
 import mock
 
@@ -50,7 +49,7 @@ def test_init_instance(mocker):
     assert raw_fs.work_dir == '/'.join([test_path, curdir])
 
 
-def test_create_file(mocker, os_path_abspath_mocker):
+async def test_create_file(mocker, os_path_abspath_mocker):
     mocked_open = mock_open()
     mocker.patch("builtins.open", mocked_open, create=True)
     
@@ -63,11 +62,11 @@ def test_create_file(mocker, os_path_abspath_mocker):
     
     cur_dir = 'path'
     raw_fs = RawFileService(cur_dir)
-    raw_fs.create(my_content)
+    await raw_fs.create(my_content.encode())
 
     mocked_abspath.assert_called_with(cur_dir)
-    mocked_open.assert_called_with(test_abs_path + '/' + random_file_name, 'w')
-    mocked_open().write.assert_called_with(my_content)
+    mocked_open.assert_called_with(test_abs_path + '/' + random_file_name, 'wb')
+    mocked_open().write.assert_called_with(my_content.encode())
 
 
 '''
@@ -113,7 +112,7 @@ def test_create_file_duplicate(mocker):
 '''
 
 
-def test_read_file_success_flow(mocker,
+async def test_read_file_success_flow(mocker,
                                 os_path_isfile_mocker_true,
                                 os_path_abspath_mocker):
 
@@ -129,17 +128,17 @@ def test_read_file_success_flow(mocker,
     mocked_abspath = os_path_abspath_mocker
 
     raw_fs = RawFileService()
-    result = raw_fs.read(test_filename)
+    result = await raw_fs.read(test_filename)
     
     abspath_filename = '/'.join([test_abs_path, test_filename])
     
     mocked_abspath.assert_called_with('.')
     mocked_isfile.assert_called_with(abspath_filename)
-    mocked_open.assert_called_with(abspath_filename, "r")
+    mocked_open.assert_called_with(abspath_filename, "rb")
     mocked_open().read.assert_called()
 
 
-def test_read_file_not_existed(mocker,
+async def test_read_file_not_existed(mocker,
                                 os_path_isfile_mocker_false,
                                 os_path_abspath_mocker):
 
@@ -153,9 +152,10 @@ def test_read_file_not_existed(mocker,
 
     raw_fs = RawFileService()
     with pytest.raises(FileNotFoundError):
-        result = raw_fs.read(test_filename)
+        result = await raw_fs.read(test_filename)
     
     mock_isfile.assert_called_with('/'.join([test_abs_path, test_filename]))
+    mocked_abspath.assert_called()
 
 
 '''

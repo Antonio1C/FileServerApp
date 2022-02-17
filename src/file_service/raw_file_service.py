@@ -44,7 +44,7 @@ class RawFileService(FileService):
         return '/'.join([self.pwd(), fd_name])
 
 
-    def create(self, data: bytes) -> str:
+    async def create(self, data: bytes) -> str:
         '''
         Create file from user content with unique file name
 
@@ -66,7 +66,7 @@ class RawFileService(FileService):
         return filename
 
 
-    def read(self, filename: str) -> bytes:
+    async def read(self, filename: str) -> bytes:
         '''
         Read file using recieved file name
 

@@ -1,37 +1,43 @@
 import os
 from typing import List, Tuple
-from src.crypto import Encryption
+from src.crypto import Encryption, HybridEncryption, SymetricEncryption
 from src.file_service import FileService
+from src.config import Config
 
 
 class EncryptedFileService(FileService):
     
     
     def __init__(self, wrapped_fs: FileService):
+        if Config().encryption_type() == 'rsa':
+            HybridEncryption()
+        else:
+            SymetricEncryption()
+
         self.wrapped_fs = wrapped_fs
         
 
-    def read(self, filename : str) -> str:
+    async def read(self, filename : str) -> str:
         encryptor = Encryption.get_encryptor(filename)
         key_file_name = encryptor.key_filename(filename)
         with open(key_file_name, 'rb') as file:
             key = file.read()
-        encrypted_data = self.wrapped_fs.read(filename)
+        encrypted_data = await self.wrapped_fs.read(filename)
         decrypted_data = encryptor.decrypt(encrypted_data, key)
         return decrypted_data
         
 
-    def create(self, data : str) -> str:
+    async def create(self, data : str) -> str:
         encryptor = Encryption.get_encryptor()
         encrypted_data, key = encryptor.encrypt(data)
-        filename = self.wrapped_fs.create(encrypted_data)
+        filename = await self.wrapped_fs.create(encrypted_data)
         key_file_name= encryptor.key_filename(filename)
         with open(key_file_name, 'wb') as f:
             f.write(key)
         return filename
 
 
-    def ls(self) -> List[str]:
+    def ls(self) -> list:
         return self.wrapped_fs.ls()
         
 
@@ -46,7 +52,7 @@ class EncryptedFileService(FileService):
         os.remove(key_file_name)
         
 
-    def get_meta_data(self, filename: str) -> Tuple[int, int, int]:
+    def get_meta_data(self, filename: str) -> Tuple[str, str, int]:
         return self.wrapped_fs.get_meta_data(filename)
 
 

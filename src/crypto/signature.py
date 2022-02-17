@@ -26,11 +26,18 @@ class SignatureFactory(type):
 
         return signer_class
 
+
     @staticmethod
     def get_signer(label: str):
         signer = SignatureFactory.signers.get(label)
         if signer == None: raise SignLabelIsIncorrect(f"Didn't find signer by '{label}' label")
         return signer
+
+
+    @staticmethod
+    def get_labels():
+        return SignatureFactory.signers.keys()
+
 
 class Md5Signer(metaclass=SignatureFactory):
 
@@ -43,5 +50,4 @@ class Sha512Signer(metaclass=SignatureFactory):
 
     label = 'sha512'
     def __call__(self, string_data: bytes) -> str:
-        
         return hashlib.sha512(string_data).hexdigest()

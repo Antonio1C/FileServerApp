@@ -27,7 +27,7 @@ class SignedFileService(FileService):
         return '/'.join([self.signature_dir, fd_name])
 
 
-    def create(self, data: bytes) -> str:
+    async def create(self, data: bytes) -> str:
         '''
         Create file from user content with unique file name
         and also files with hash
@@ -42,7 +42,7 @@ class SignedFileService(FileService):
             name of created file
         '''
         data_hash = self.signer(data)
-        filename = self.wrapped_fs.create(data)
+        filename = await self.wrapped_fs.create(data)
 
         signature_filename = self.signer.get_sign_filename(filename)
         abs_path = self.abspath(signature_filename)
@@ -51,7 +51,7 @@ class SignedFileService(FileService):
 
         return filename
 
-    def read(self, filename: str) -> bytes:
+    async def read(self, filename: str) -> bytes:
         '''
         Read file using recieved file name. Also it cheched for sign
 
@@ -65,7 +65,7 @@ class SignedFileService(FileService):
             or "FileBroken" if the file is not validate
         '''
 
-        content = self.wrapped_fs.read(filename)
+        content = await self.wrapped_fs.read(filename)
         
         abspath_filename = self.abspath(filename)
         sign_filename = self.signer.get_sign_filename(abspath_filename)

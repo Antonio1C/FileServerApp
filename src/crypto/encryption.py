@@ -64,14 +64,12 @@ class SymetricEncryption(Encryption):
         session_key.extend(bytearray(tag))
         session_key.extend(bytearray(aes.nonce))
         
-        print(session_key)
-        
         return encrypted_data, session_key
 
     
     def decrypt(self, encrypted_data: bytes, key: bytes) -> bytes:
         n = 16
-        print(key)
+        
         session_key, tag, nonce = (bytearray(key[i:i+n]) for i in range(0, len(key), n))
         aes = AES.new(session_key, AES.MODE_EAX, nonce)
         decrypted_data = aes.decrypt_and_verify(encrypted_data, tag)

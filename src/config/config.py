@@ -6,6 +6,7 @@ class Config(metaclass=utils.Singleton):
 
     SIGNATURE_SECTION = 'SIGNATURE'
     ENCRYPTION_SECTION = 'ENCRYPTION'
+    COMMON_SECTION = 'COMMON'
 
     def __init__(self):
         if not 'config_data' in self.__dict__:
@@ -13,7 +14,8 @@ class Config(metaclass=utils.Singleton):
 
     def load(self, filename: str):
         if not os.path.exists(filename):
-            raise FileNotFoundError(f'Can\'t find config file {filename}')
+            return
+            
         self.config_data = ConfigParser()
         self.config_data.read(filename)
 
@@ -28,6 +30,7 @@ class Config(metaclass=utils.Singleton):
         if value_name not in section: return False
         
         return True
+        
 
     def signature_algo(self) -> str:
 
@@ -40,6 +43,7 @@ class Config(metaclass=utils.Singleton):
         
         section = config_data[Config.SIGNATURE_SECTION]
         return section[sign_algo]
+        
 
     def signature_dir(self) -> str:
         default_dir = '.'
@@ -74,3 +78,39 @@ class Config(metaclass=utils.Singleton):
         
         section = config_data[Config.ENCRYPTION_SECTION]
         return section[keys_path]
+
+
+    def use_signature(self):
+        default_value = False
+        use_sign = 'use_signature'
+        
+        config_data = self.config_data
+        if not Config.check_config_data(config_data, Config.COMMON_SECTION, use_sign):
+            return default_value
+        
+        section = config_data[Config.COMMON_SECTION]
+        return False if section[use_sign] == 0 else True
+
+
+    def use_encryption(self):
+        default_value = False
+        use_incr = 'use_encryption'
+        
+        config_data = self.config_data
+        if not Config.check_config_data(config_data, Config.COMMON_SECTION, use_incr):
+            return default_value
+        
+        section = config_data[Config.COMMON_SECTION]
+        return False if section[use_incr] == 0 else True
+
+
+    def working_directory(self) -> str:
+        default_value = '.'
+        work_dir = 'working_directory'
+        
+        config_data = self.config_data
+        if not Config.check_config_data(config_data, Config.COMMON_SECTION, work_dir):
+            return default_value
+        
+        section = config_data[Config.COMMON_SECTION]
+        return section[work_dir]
