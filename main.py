@@ -1,14 +1,17 @@
 #! /usr/bin/env/ python
 
 import argparse
+from src import user_service
 from src.config import Config
 from src.file_service import FileService, RawFileService, SignedFileService, EncryptedFileService
 from src.file_service import FileBroken
+from src.user_service import UserService
 import logging
 import logging.config
 import yaml
 from aiohttp import web
 from src.http_server import create_web_app
+import psycopg2
 
 
 def read_file(f_service: FileService):
@@ -138,7 +141,9 @@ def main():
     if config.use_signature(): file_service = SignedFileService(file_service)
     if config.use_encryption(): file_service = EncryptedFileService(file_service)
 
-    app = create_web_app(file_service)
+    conn = psycopg2.connect(dbname='file_server', user='postgres', password='postgres', host='192.168.10.1')
+    user_service = UserService(conn)
+    app = create_web_app(file_service, user_service)
     web.run_app(app)
 
 
