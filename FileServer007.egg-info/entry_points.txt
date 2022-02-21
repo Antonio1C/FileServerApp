@@ -1,0 +1,3 @@
+[console_sripts]
+fileserver007 = src.fileserver007:app
+

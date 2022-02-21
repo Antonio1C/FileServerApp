@@ -1,7 +1,6 @@
 #! /usr/bin/env/ python
 
 import argparse
-from src import user_service
 from src.config import Config
 from src.file_service import FileService, RawFileService, SignedFileService, EncryptedFileService
 from src.file_service import FileBroken

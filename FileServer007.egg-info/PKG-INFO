@@ -1,0 +1,15 @@
+Metadata-Version: 1.0
+Name: FileServer007
+Version: 1.0.0.0
+Summary: UNKNOWN
+Home-page: UNKNOWN
+Author: UNKNOWN
+Author-email: UNKNOWN
+License: UNKNOWN
+Description: # FileServer
+        
+        Async file server
+        Support encryption
+        Support signatures
+        Support User management
+Platform: UNKNOWN
