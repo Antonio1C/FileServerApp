@@ -16,12 +16,12 @@ class Encryption(metaclass=ABCMeta):
 
     def __init__(self) -> None:
         config = Config()
-        self.keys_path = os.path.abspath(config.encryption_keys_path())
+        self.keys_dirname = config.encryption_keys_dirname()
         Encryption.encryptors.append(self)
         
     
     def key_filename(self, filename: str) -> str:
-        return os.path.join(self.keys_path, '.'.join([filename, self.get_type()]))
+        return os.path.join(self.keys_dirname, '.'.join([filename, self.get_type()]))
     
     
     @abstractmethod
@@ -83,11 +83,15 @@ class SymetricEncryption(Encryption):
 class HybridEncryption(Encryption):
 
 
-    def __init__(self) -> None:
+    def __init__(self, work_dir:str) -> None:
         super().__init__()
         
         self.sym_encryption = SymetricEncryption()
-        private_key_file = os.path.join(self.keys_path, 'key.pem')
+        private_key_directory = os.path.join(work_dir, self.keys_dirname)
+        if not os.path.exists(private_key_directory):
+            os.mkdir(private_key_directory)
+        
+        private_key_file = os.path.join(private_key_directory, 'key.pem')
         if os.path.exists(private_key_file):
             self.rsa_key = RSA.import_key(open(private_key_file).read())
         else:

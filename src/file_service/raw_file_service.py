@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import copy
 from src import utils
 from typing import Optional, Tuple, Union
 from src.file_service import FileService
@@ -8,7 +9,10 @@ class RawFileService(FileService):
 
 
     def __init__(self, directory: str = '.') -> None:
-        self.work_dir = os.path.abspath(directory)
+        self.__root_dir = os.path.abspath(directory)
+        self.__work_dir = self.__root_dir
+        if not os.path.exists(self.__root_dir):
+            os.mkdir(self.__root_dir)
         
 
     @staticmethod
@@ -36,7 +40,7 @@ class RawFileService(FileService):
     
     def pwd(self) -> str:
         '''Return abs path of working directory'''
-        return self.work_dir
+        return self.__work_dir
     
     
     def abspath(self, fd_name:str) -> str:
@@ -96,10 +100,10 @@ class RawFileService(FileService):
         ------------
             list of directories and files in current directory
         '''
-        return os.listdir(path=self.work_dir)
+        return os.listdir(path=self.__work_dir)
 
 
-    def chdir(self, new_directory: str) -> None:
+    def chdir(self, new_directory: str) -> bool:
         '''
         Change current directory using new directory name
 
@@ -117,8 +121,8 @@ class RawFileService(FileService):
         if not os.path.isdir(abs_path):
             raise NotADirectoryError
 
-        if not new_directory == '.':
-            self.work_dir = os.path.abspath(abs_path)
+        if abs_path != self.__root_dir:
+            self.__work_dir = os.path.abspath(abs_path)
 
 
     def delete(self, filename: str) -> None:
@@ -158,3 +162,16 @@ class RawFileService(FileService):
         fsize = file_stat.st_size
 
         return (ctime, mtime, fsize)
+    
+
+    def copy_instance(self, root_dir: str) -> FileService:
+        cur_root_dir = self.__root_dir
+        self.__root_dir = os.path.join(cur_root_dir, root_dir)
+        self.__work_dir = self.__root_dir
+        
+        new_instance = copy.deepcopy(self)
+        
+        self.__root_dir = cur_root_dir
+        self.__work_dir = cur_root_dir
+        
+        return new_instance

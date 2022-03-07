@@ -1,6 +1,5 @@
 #! /usr/bin/env/ python
 
-from datetime import datetime
 from typing import Tuple
 from abc import ABCMeta, abstractmethod
 
@@ -36,5 +35,4 @@ class FileService(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def get_meta_data(self, filename: str) -> Tuple[str, str, int]: raise Exception('not implemented')
-
+    def get_meta_data(self, filename: str) -> Tuple[str, str, int]: raise NotImplemented

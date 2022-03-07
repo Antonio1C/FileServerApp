@@ -6,7 +6,7 @@ class Singleton:
         if classname not in Singleton.instances:
             Singleton.instances[classname] = new_class()
         
-        def __new__(cls):
+        def __new__(cls, dirname:str = '.'):
             return Singleton.instances[classname]
 
         new_class.__new__ = __new__

@@ -14,6 +14,6 @@ setup(
     setup_requires = ['pytest-runner'],
     tests_require = ['pytest', 'mock', 'pytest-mock'],
     entry_points = {
-        'console_sripts': ['fileserver007 = src.fileserver007:app']
+        'console_scripts': ['fileserver007 = src.fileserver007:app']
     }
 )
